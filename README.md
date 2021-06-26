@@ -27,5 +27,9 @@ We recommend using a VPS since you are scanning many random IP addresses your IS
 - Clean up some code and make it more user friendly  
 
 ## Images
+Scan added to openvas
 <p align="left"> <img src="https://github.com/xSneaky/Openus/blob/0938f91b1a21771d5c9e89b3122fda8aefb26255/images/ScanAdded.png"> </p>
+
+Host Found with nmap and added to index
+<p align="left"> <img src="https://github.com/xSneaky/Openus/blob/6df8d51bc018c02ecb6328361f7a37c9354e3917/images/ScanFound.png"> </p>
 
