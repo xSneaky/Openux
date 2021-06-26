@@ -27,5 +27,5 @@ We recommend using a VPS since you are scanning many random IP addresses your IS
 - Clean up some code and make it more user friendly  
 
 ## Images
-<p <img src="https://github.com/xSneaky/Openus/blob/0938f91b1a21771d5c9e89b3122fda8aefb26255/images/ScanAdded.png
-"> </p>
+<p align="left"> <img src="https://github.com/xSneaky/Openus/blob/0938f91b1a21771d5c9e89b3122fda8aefb26255/images/ScanAdded.png"> </p>
+
