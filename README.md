@@ -7,4 +7,4 @@ OPENUX was a private project of mine that I have been working on for a few month
 
 The IP is then passed to Nmap to find active web servers. If a web server is found, it will grab the web server's headers and page title comparing them to a blacklist.
 
-If everything checks out, it will be, it will be passed to Openvas to scan. When the scan is complete it will check the severity of the report. Depending on what you have set the settings to, it will then use Discord webhooks to send you the PDF report of the Medium or High Vulns. 
+If everything checks out it will be passed to Openvas to scan. After the scan is complete it will check the severity of the report. Depending on what you have set the settings to, it will then use Discord webhooks to send you the PDF report of the Medium or High Vulns.
