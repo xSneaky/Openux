@@ -1,4 +1,4 @@
-<p align="center"> <img src="https://github.com/xSneaky/Portfolio/blob/2689a4922c9afc05d5ba42201c10eb6e7aa6471b/banner.gif"> </p>
+<p align="center"> <img src="https://github.com/xSneaky/Openus/blob/3fc7d26aef68effe7903847adcb49a497dcde3d2/logo.gif"> </p>
 
 ## About
 
