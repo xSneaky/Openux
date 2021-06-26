@@ -25,11 +25,13 @@ We recommend using a VPS since you are scanning many random IP addresses your IS
 - Add Discord bot for searching the index
 - Integrate with Metasploit for auto exploitation
 - Clean up some code and make it more user friendly  
-
 ## Images
 Scan added to openvas
 <p align="left"> <img src="https://github.com/xSneaky/Openus/blob/0938f91b1a21771d5c9e89b3122fda8aefb26255/images/ScanAdded.png"> </p>
 
 Host Found with nmap and added to index
 <p align="left"> <img src="https://github.com/xSneaky/Openus/blob/6df8d51bc018c02ecb6328361f7a37c9354e3917/images/ScanFound.png"> </p>
+
+PDF Reports
+<p align="left"> <img src="https://github.com/xSneaky/Openus/blob/b19c3b3a0276edc23d03d33f9f8faa8172516953/images/PDF.png"> </p>
 
