@@ -64,7 +64,7 @@ def worker():
                                         embed.add_embed_field(name="PHP Version", value=str(PHP_header), inline=False)
                                         webhook.add_embed(embed)
                                         response = webhook.execute()
-                                        ix = index.open_dir("/home/data/Python/IP_Database")
+                                        ix = index.open_dir("/IP_Database")
                                         writer = ix.writer()
                                         writer.add_document(IP=IP, URL=req.url, page_title=str(soup.title).replace("<title>", "").replace("</title>", ""), time=time, date=date, Server=server_header, PHP=PHP_header, Scanned="False", path="/" + IP)
                                         writer.commit()
