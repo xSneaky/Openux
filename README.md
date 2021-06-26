@@ -18,7 +18,7 @@ If everything checks out it will be passed to Openvas to scan. After the scan is
 
 
 ## System Recommendation
-We recommend using a VPS since you are scanning many random IP addresses your ISP might send you letters, terminate contract or even be blacklisted from many websites. Openvas also has to check thousands of signatures on targets so you will need a system with more than 4 cores and 8GB ram otherwise you might run into issues like Openven crashing, slow scans or been limited of how many hosts you can scan.
+We recommend using a VPS since you are scanning many random IP addresses your ISP might send you letters, terminate contract or even be blacklisted from many websites. Openvas also has to check thousands of signatures on hosts so you will need a system with more than 4 cores and 8GB ram otherwise you might run into issues like Openven crashing, slow scans or been limited of how many hosts you can scan.
 
 
 ## Road map
