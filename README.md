@@ -5,17 +5,12 @@
 OPENUX was a private project of mine that I have been working on for a few months. While developing this tool I have learned a lot and although this tool is not perfect I will carry on imporving this untill it's perfect. 
 
 ## What does it do?
-There are currently two scripts that are used to work the tool. The hunter script generates random IP addresses that's scanned with map to check if a web server is running on the host. If a web server is running the hunter script will then check the page title and headers comparing them to a blacklist. As long as the it does not match the blacklists, it will be put in a search index engine file named IP_Database then saved in the following format:
+There are currently two scripts that are used to work the tool. The hunter.py script generates random IP addresses that's scanned with map to check if a web server is running on the host. If a web server is running the hunter script will then check the page title and headers comparing them to a blacklist. As long as the it does not match the blacklists, it will be put in a search index engine file named IP_Database then saved in the following format:
 IP, URL, page title, time, date, Web server software, PHP Version, Scanned by openvas and ID.
 To speed up this process you can set how many threads we want the hunter to use in /modules/config.ini but make sure you leave enough for openvas scans. When the hunter finds a host you will get an alert though discord using webhooks.
 
-The Second scrip is openvas.py
-
-This tool uses Openvas, Nmap-Python, Whoosh (Search Indexing Engine), Requests, bs4, Discord webhooks and gvm-tools to generate an IP address randomly.
-
-The IP is then passed to Nmap to find active web servers. If a web server is found, it will grab the web server's headers and page title comparing them to a blacklist.
-
-If everything checks out it will be passed to Openvas to scan. After the scan is complete it will check the severity of the report. Depending on what you have set the settings to, it will then use Discord webhooks to send you the PDF report of the Medium or High Vulns.
+The Second scrip is openvas.py does all the automation for openvas grabbing data from IP_Database as long as "Scanned=False" to stop repeated scans. Again like the hunter you can configure username, password, gvm sock location, scan_id, config_id, pdf_id, discord alert webhooks and how many hosts to scan at one time.
+At the moment the severty level is set to 5.9 so any results lower then this will be ignored and anything higher will be made into a PDF and saved in /results as well as send to discord via webhook.
 
 
 ## Main Features
