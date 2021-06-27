@@ -17,12 +17,22 @@ from base64 import b64decode
 from pathlib import Path
 import os
 import time
-
+import configparser
 def main():
-    connection = UnixSocketConnection(path="/opt/gvm/var/run/gvmd.sock", timeout=600000000)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    config = configparser.ConfigParser()
+    config.read(dir_path + "/config.ini")
+    connection = UnixSocketConnection(path=config['OPENVAS']['gvmd-sock'], timeout=600000000)
     transform = EtreeTransform()
-    with Gmp(connection, transform=transform) as gmp:
-        gmp.authenticate('gvmadmin', '*-__Rosi3__-*')
+    def login():
+        with Gmp(connection, transform=transform) as gmp:
+            gmp.authenticate(config['OPENVAS']['gvm-user'], config['OPENVAS']['gvm-pass'])
+            output = gmp.is_authenticated()
+            return output
+    return login()
+                
+
+
 
     Tasks_Running = 0
     while True:
@@ -32,10 +42,10 @@ def main():
             for status in get_status.xpath('//status'):
                 if status.text != 'Done':
                     Tasks_Running += 1
-            print(Tasks_Running)
+            #print(Tasks_Running)
             time.sleep(60)
-            if Tasks_Running != 1:
-                load_data = index.open_dir("/home/data/Python/IP_Database")
+            if Tasks_Running != config['OPENVAS']['scanning-tasks-limit']:
+                load_data = index.open_dir(dir_path + "/IP_Database")
                 with load_data.searcher() as searcher:
                     query = QueryParser("Scanned", load_data.schema).parse("False")
                     results = searcher.search(query, limit=1)
@@ -49,14 +59,14 @@ def main():
                         PHP = result.get('PHP')
                         path = result.get('path')
                     name = "Suspect Host {} {}".format(ipaddress, str(datetime.datetime.now()))
-                    response = gmp.create_target(name=name, hosts=[ipaddress], port_list_id="33d0cd82-57c6-11e1-8ed1-406186ea4fc5")
+                    response = gmp.create_target(name=name, hosts=[ipaddress], port_list_id=config['OPENVAS']['gvm-port-list-id'])
                     name = "Scan Suspect Host {}".format(ipaddress)
-                    response = gmp.create_task(name=name, config_id="daba56c8-73ec-11df-a475-002264764cea", target_id=response.get('id'), scanner_id="08b69003-5fc2-4037-a479-93b440211c73")
+                    response = gmp.create_task(name=name, config_id=config['OPENVAS']['gvm-config-id'], target_id=response.get('id'), scanner_id=config['OPENVAS']['gvm-scanner-id'])
                     response = gmp.start_task(response.get('id'))
                     writer = load_data.writer()
                     writer.update_document(IP=ipaddress, URL=URL, page_title=page_title, time=time1, date=date, Server=server, PHP=PHP, Scanned="True", path=path)
                     writer.commit()
-                    webhook = DiscordWebhook(url="https://discord.com/api/webhooks/855074456212733953/j8QDLp8z5QxC9tO_aEs2EOpLne3ODgWkH3Bjc5HGy8v6T_fD6rmKbULa_RyOZVMcRLSd")
+                    webhook = DiscordWebhook(url=config['OPENVAS']['scanning-webhook'])
                     embed = DiscordEmbed(title="Target Added For Scanning", color='03b2f8')
                     embed.add_embed_field(name="IP Address", value=str(ipaddress), inline=False)
                     embed.add_embed_field(name="URL", value=str(URL), inline=False)
@@ -68,8 +78,8 @@ def main():
                     webhook.add_embed(embed)
                     response = webhook.execute()
             else:
-                print("Too many tasks running")
-                print("Checking for Done tasks")
+                #print("Too many tasks running")
+                #print("Checking for Done tasks")
                 for status in get_status.xpath('//status'):
                     if status.text == "Done":
                         resp = gmp.get_tasks()
@@ -78,24 +88,24 @@ def main():
                             if last is not None:
                                 report = last.find('report')
                                 if report is not None:
-                                    specReport = gmp.get_report(report.get('id'),filter_string="severity>5.9", details=True)
+                                    specReport = gmp.get_report(report.get('id'),filter_string=config['OPENVAS']['task-severty'], details=True)
                                     jmpToResults = specReport.find('report').find('report').find('results')
                                     for result in jmpToResults:
                                         host = result.find('host')
-                                        file_check = os.path.isfile("/home/data/Python/PDFS/" + host.text + ".pdf")
+                                        file_check = os.path.isfile(dir_path + "/reports/" + host.text + ".pdf")
                                         if file_check == False:
-                                            pdf_filename = "/home/data/Python/PDFS/" + host.text + ".pdf"                                
-                                            pdf_report_format_id = "c402cc3e-b531-11e1-9163-406186ea4fc5"
-                                            response = gmp.get_report(report_id=report.get('id'), report_format_id=pdf_report_format_id, filter_string="apply_overrides=1 min_qod=70 first=1 sort-reverse=severity rows=10 severity>5.9")
+                                            pdf_filename = dir_path + "/reports/" + host.text + ".pdf"                                
+                                            pdf_report_format_id = config['OPENVAS']['pdf-report-format-id']
+                                            response = gmp.get_report(report_id=report.get('id'), report_format_id=pdf_report_format_id, filter_string=config['OPENVAS']['pdf-report-severity'])
                                             report_element = response.find("report")
                                             content = report_element.find("report_format").tail
                                             binary_base64_encoded_pdf = content.encode('ascii')
                                             binary_pdf = b64decode(binary_base64_encoded_pdf)
                                             pdf_path = Path(pdf_filename).expanduser()
                                             pdf_path.write_bytes(binary_pdf)
-                                            webhook = DiscordWebhook(url="https://discord.com/api/webhooks/855496703385403422/LzeOkjgJcoaWMO6pjIhqrJEaamvZhiBXZ-MJsU3KZmM6sPVT9cR-iYK984_-OJBo1xBf")
-                                            print("Sending PDF Report")
-                                            with open("/home/data/Python/PDFS/" + host.text + ".pdf", "rb") as f:
+                                            webhook = DiscordWebhook(url=config['OPENVAS']['pdf-report-webhook'])
+                                            #print("Sending PDF Report")
+                                            with open(dir_path + "/reports/" + host.text + ".pdf", "rb") as f:
                                                 webhook.add_file(file=f.read(), filename=host.text + ".pdf")
                                             response = webhook.execute()
                                         else:
@@ -103,6 +113,6 @@ def main():
                                 else:
                                     pass
         except:
-            print("Socket Error, restarting services")
-            gvm_restart = os.popen("systemctl restart gsa.service && gvm.service && openvas,service")
+            #print("Socket Error, restarting services")
+            gvm_restart = os.popen("systemctl restart && gsa.service && gvm.service && openvas.service")
             time.sleep(60)
