@@ -9,7 +9,7 @@ from whoosh.fields import *
 import datetime
 import os.path
 
-#Creates Data File
+#Creates Files
 dir_path = os.path.dirname(os.path.realpath(__file__))
 if not os.path.exists(dir_path + "/IP_Database"):
     print("Creating Search Indexing")
@@ -21,10 +21,22 @@ if not os.path.exists(dir_path + "/reports"):
     print("Creating reports file")
     os.mkdir(dir_path + "/reports")
     print("Done")
+if not os.path.exists(dir_path + "/page-title-blacklist.txt"):
+    print("Creating page title blacklist")
+    open(dir_path + "/page-title-blacklist.txt", "w")
+    print("Done")
+if not os.path.exists(dir_path + "/headers-blacklist.txt"):
+    print("Creating headers blacklist")
+    open(dir_path + "/headers-blacklist.txt", "w")
+    print("Done")
 
 #Starts Modules
 config = configparser.ConfigParser()
 config.read(dir_path + "/modules/config.ini")
 Thread(target=openvas.main).start()
-for x in range(int(config['HUNTER']['nmap-threads'])):
-    Thread(target=hunter.worker).start()
+if openvas.main() == False:
+    print("Error, Please check username or password")
+    sys.exit()
+else:
+    for x in range(int(config['HUNTER']['nmap-threads'])):
+        Thread(target=hunter.worker).start()
