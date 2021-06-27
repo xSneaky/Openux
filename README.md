@@ -9,9 +9,7 @@ There are currently two scripts that are used to work the tool. The hunter.py sc
 IP, URL, page title, time, date, Web server software, PHP Version, Scanned by openvas and ID.
 To speed up this process you can set how many threads we want the hunter to use in /modules/config.ini but make sure you leave enough for openvas scans. When the hunter finds a host you will get an alert though discord using webhooks.
 
-The Second scrip is openvas.py does all the automation for openvas grabbing data from IP_Database as long as "Scanned=False" to stop repeated scans. Again like the hunter you can configure username, password, gvm sock location, scan_id, config_id, pdf_id, discord alert webhooks and how many hosts to scan at one time.
-At the moment the severty level is set to 5.9 so any results lower then this will be ignored and anything higher will be made into a PDF and saved in /results as well as send to discord via webhook.
-
+The Second scrip is open-face. Pi does all the automation for openvas grabbing data from IP_Database as long as "Scanned=False" to stop repeated scans. Again, like the hunter you can configure username, password, gvm sock location, scan_id, config_id, pdf_id, discord alert webhooks and how many hosts to scan at one time.At the moment the severity level is set to 5.9 so any results, lower than this will be ignored and anything higher will be made into a PDF and saved in /results as well as send to discord via webhook.
 
 ## Main Features
 - Multi Threading for Nmap
