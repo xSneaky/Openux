@@ -30,9 +30,6 @@ def main():
             output = gmp.is_authenticated()
             return output
     return login()
-                
-
-
 
     Tasks_Running = 0
     while True:
