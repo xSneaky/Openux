@@ -2,7 +2,7 @@
 
 
 ## About The Project
-OPENUX was a private project of mine that I have been working on for a few months. While developing this tool I have learned a lot and although this tool is not perfect I will carry on imporving this untill it's perfect. If you have any tip or improvments feel free to send me a pirate message or submit pull request.
+OPENUX was a private project of mine that I have been working on for a few months. While developing this tool I have learned a lot and although this tool is not perfect I will carry on imporving this untill it's perfect. If you have any tip or improvments feel free to send me a private message or submit pull request.
 
 ## What does it do?
 There are currently two scripts that are used to work the tool. The hunter.py script generates random IP addresses that's scanned with map to check if a web server is running on the host. If a web server is running the hunter script will then check the page title and headers comparing them to a blacklist. As long as the it does not match the blacklists, it will be put in a search index engine file named IP_Database then saved in the following format:
