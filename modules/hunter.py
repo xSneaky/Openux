@@ -15,15 +15,17 @@ import asyncio
 import itertools
 from discord_webhook import DiscordWebhook, DiscordEmbed
 import configparser
+import os
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
 config = configparser.ConfigParser()
-config.read('openux/modules/config.ini')
+config.read(dir_path + 'config.ini')
 
 timedate = datetime.datetime.now()
 date = timedate.strftime("%x")
 time = timedate.strftime("%X")
-title_search = ["Google", "Welcome to nginx!", "Apache2 Debian Default Page: It works", "Test Page for the Apache HTTP Server", "Apache HTTP Server Test Page powered by CentOS"]
-Header_search = ["cloudflare"]
+title_search = open(dir_path + "/../page-title-blacklist.txt", "r")
+Header_search = open(dir_path + "/../headers-blacklist.txt", "r")
 def worker():
     requests.packages.urllib3.disable_warnings()
     while True:
@@ -48,7 +50,7 @@ def worker():
                             soup = BeautifulSoup(req.text, 'html.parser')
                             if str(req.status_code) == "200":
                                 if str(soup.title).replace("<title>", "").replace("</title>", "") in title_search:
-                                    pass
+                                    print("Blacklisted")
                                 else:
                                     if server_header in Header_search:
                                         pass
