@@ -17,7 +17,7 @@ from discord_webhook import DiscordWebhook, DiscordEmbed
 from base64 import b64decode
 from pathlib import Path
 import os
-import time
+import time as EE
 import nmap
 import random
 import requests
@@ -26,6 +26,7 @@ from multiprocessing import Process, Queue
 from bs4 import BeautifulSoup
 import re
 import itertools
+from threading import Thread
 
 #Creates missing files
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -47,13 +48,13 @@ elif not os.path.exists(dir_path + "/headers-blacklist.txt"):
 #Loads config file and other stuff
 dir_path = os.path.dirname(os.path.realpath(__file__))
 config = configparser.ConfigParser()
-config.read(dir_path + "/config.ini")
+config.read("/home/ubuntu/Python/Openux/modules/config.ini")
 timedate = datetime.datetime.now()
 date = timedate.strftime("%x")
 time = timedate.strftime("%X")
 #blacklist files
-title_search = open(dir_path + "/../page-title-blacklist.txt", "r")
-Header_search = open(dir_path + "/../headers-blacklist.txt", "r")
+#title_search = open(dir_path + "/../page-title-blacklist.txt", "r")
+#Header_search = open(dir_path + "/../headers-blacklist.txt", "r")
 #Disables SSL warning for requests
 requests.packages.urllib3.disable_warnings()
 #loads the file for search indexing engine
@@ -61,62 +62,60 @@ load_data = index.open_dir(dir_path + "/IP_Database")
 
 #Hunter
 def Hunter():
+    requests.packages.urllib3.disable_warnings()
     while True:
         try:
-            check = False
             ua = UserAgent()
             header = {'User-Agent':str(ua.firefox)}
             nscan = nmap.PortScanner()
-            #randomly makes IP addresses
             one = str(random.randint(0, 99))
             two = str(random.randint(0, 99))
             three = str(random.randint(0, 99))
             four = str(random.randint(0, 99))
             IP = one + "." + two + "." + three + "." + four
-            with load_data.searcher() as searcher:
-                query = QueryParser("IP", load_data.schema).parse(IP)
-                results = searcher.search(query, limit=1)
-                for result in results:
-                    if result['IP'] == IP:
-                        #uses nmap to scan for ports
-                        nscan.scan(IP, '80-443', arguments="--min-rate 100")
-                        for host in nscan.all_hosts():
-                            for proto in nscan[host].all_protocols():
-                                lport = nscan[host][proto].keys()
-                                for port in lport:
-                                    if str(port) == "80" and nscan[host][proto][port]['state'] == "open":
-                                        req = requests.get("http://" + IP, allow_redirects=True, verify=False, headers=header)
-                                        server_header = req.headers.get('Server')
-                                        PHP_header = req.headers.get('X-Powered-By')
-                                        soup = BeautifulSoup(req.text, 'html.parser')
-                                        if str(req.status_code) == "200":
-                                            for title_searcher in title_search:
-                                                if str(soup.title).replace("<title>", "").replace("</title>", "") != str(title_searcher).strip():
-                                                    for Header_searcher in Header_search:
-                                                        if header != str(Header_searcher):
-                                                            checks = True
-                                                        else:
-                                                            break
+            nscan.scan(IP, '80-443', arguments="--min-rate 100")
+            for host in nscan.all_hosts():
+                for proto in nscan[host].all_protocols():
+                    lport = nscan[host][proto].keys()
+                    for port in lport:
+                        if str(port) == "80" and nscan[host][proto][port]['state'] == "open":
+                            try:
+                                req = requests.get("http://" + IP, allow_redirects=True, verify=False, headers=header)
+                                server_header = req.headers.get('Server')
+                                PHP_header = req.headers.get('X-Powered-By')
+                                soup = BeautifulSoup(req.text, 'html.parser')
+                                if str(req.status_code) == "200":
+                                    with open("/home/ubuntu/Python/Openux/page-title-blacklist.txt", "r") as titleblacklist:
+                                        if str(soup.title).replace("<title>", "").replace("</title>", "") in titleblacklist.read():
+                                            #print("Found Title")
+                                            pass
+                                        else:
+                                            with open("/home/ubuntu/Python/Openux/headers-blacklist.txt", "r") as headersblacklist:
+                                                if server_header in headersblacklist.read():
+                                                    #print("Found headers")
+                                                    pass
                                                 else:
-                                                    break
-                                        if checks == True:
-                                            webhook = DiscordWebhook(url=config['HUNTER']['hunter-webhook'])
-                                            embed = DiscordEmbed(title="Target Found", color='03b2f8')
-                                            embed.add_embed_field(name="IP Address", value=str(IP), inline=False)
-                                            embed.add_embed_field(name="URL", value=str(req.url), inline=False)
-                                            embed.add_embed_field(name="Page Title", value=str(soup.title).replace("<title>", "").replace("</title>", ""), inline=False)
-                                            embed.add_embed_field(name="Date Added To Database", value=str(date), inline=False)
-                                            embed.add_embed_field(name="Time Added To Database", value=str(time), inline=False)
-                                            embed.add_embed_field(name="Web Server Version", value=str(server_header), inline=False)
-                                            embed.add_embed_field(name="PHP Version", value=str(PHP_header), inline=False)
-                                            webhook.add_embed(embed)
-                                            response = webhook.execute()
-                                            ix = index.open_dir(dir_path + "/../IP_Database")
-                                            writer = ix.writer()
-                                            writer.add_document(IP=IP, URL=req.url, page_title=str(soup.title).replace("<title>", "").replace("</title>", ""), time=time, date=date, Server=server_header, PHP=PHP_header, Scanned="False", path="/" + IP)
-                                            writer.commit()
+                                                    webhook = DiscordWebhook(url=config['HUNTER']['hunter-webhook'])
+                                                    embed = DiscordEmbed(title="Target Found", color='03b2f8')
+                                                    embed.add_embed_field(name="IP Address", value=str(IP), inline=False)
+                                                    embed.add_embed_field(name="URL", value=str(req.url), inline=False)
+                                                    embed.add_embed_field(name="Page Title", value=str(soup.title).replace("<title>", "").replace("</title>", ""), inline=False)
+                                                    embed.add_embed_field(name="Date Added To Database", value=str(date), inline=False)
+                                                    embed.add_embed_field(name="Time Added To Database", value=str(time), inline=False)
+                                                    embed.add_embed_field(name="Web Server Version", value=str(server_header), inline=False)
+                                                    embed.add_embed_field(name="PHP Version", value=str(PHP_header), inline=False)
+                                                    webhook.add_embed(embed)
+                                                    response = webhook.execute()
+                                                    ix = index.open_dir("/home/ubuntu/Python/Openux/IP_Database")
+                                                    writer = ix.writer()
+                                                    writer.add_document(IP=IP, URL=req.url, page_title=str(soup.title).replace("<title>", "").replace("</title>", ""), time=time, date=date, Server=server_header, PHP=PHP_header, Scanned="False", path="/" + IP)
+                                                    writer.commit()
+                                                    #print(IP)
+                            except:
+                                pass
+
         except:
-            pass
+            raise
 
 #Openvas
 def openvas():
@@ -138,9 +137,10 @@ def openvas():
                 if status.text != 'Done':
                     Tasks_Running += 1
             print(Tasks_Running)
-            time.sleep(60)
+            #time.sleep(60)
+            EE.sleep(10)
             if Tasks_Running != int(config['OPENVAS']['scanning-tasks-limit']):
-                load_data = index.open_dir(dir_path + "/../IP_Database")
+                load_data = index.open_dir("/home/ubuntu/Python/Openux/IP_Database")
                 with load_data.searcher() as searcher:
                     query = QueryParser("Scanned", load_data.schema).parse("False")
                     results = searcher.search(query, limit=1)
@@ -208,4 +208,9 @@ def openvas():
                                 else:
                                     pass
         except:
-            pass
+            raise
+
+if __name__ == "__main__":    
+    Thread(target=openvas).start()
+    for x in range(int(config['HUNTER']['nmap-threads'])):
+        Thread(target=Hunter).start()
