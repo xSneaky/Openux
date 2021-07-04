@@ -171,15 +171,16 @@ def openvas():
             else:
                 print("Too many tasks running")
                 print("Checking for Done tasks")
+                #delete 
+                check = gmp.get_tasks(filter_string=config['OPENVAS']['delete-task'])
+                for delete in check.findall('task'):
+                    gmp.delete_task(delete.get('id'))
                 for status in get_status.xpath('//status'):
                     if status.text == "Done":
                         resp = gmp.get_tasks()
                         for task in resp.findall('task'):
                             last = task.find('last_report')
                             if last is not None:
-                                if last.find('severity') is None:
-                                    gmp.delete_task(task.get('id'))
-                                    pass
                                 report = last.find('report')
                                 if report is not None:
                                     specReport = gmp.get_report(report.get('id'),filter_string=config['OPENVAS']['task-severty'], details=True)
@@ -204,8 +205,8 @@ def openvas():
                                             response = webhook.execute()
                                         else:
                                             pass
-                                else:
-                                    pass
+                            else:
+                                pass
 
         except:
             raise
