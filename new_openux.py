@@ -27,6 +27,7 @@ from bs4 import BeautifulSoup
 import re
 import itertools
 from threading import Thread
+from gvm.xml import pretty_print
 
 #Creates missing files
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -48,7 +49,7 @@ elif not os.path.exists(dir_path + "/headers-blacklist.txt"):
 #Loads config file and other stuff
 dir_path = os.path.dirname(os.path.realpath(__file__))
 config = configparser.ConfigParser()
-config.read("/home/ubuntu/Python/Openux/modules/config.ini")
+config.read(dir_path + "/config.ini")
 timedate = datetime.datetime.now()
 date = timedate.strftime("%x")
 time = timedate.strftime("%X")
@@ -85,12 +86,12 @@ def Hunter():
                                 PHP_header = req.headers.get('X-Powered-By')
                                 soup = BeautifulSoup(req.text, 'html.parser')
                                 if str(req.status_code) == "200":
-                                    with open("/home/ubuntu/Python/Openux/page-title-blacklist.txt", "r") as titleblacklist:
+                                    with open(dir_path + "/page-title-blacklist.txt", "r") as titleblacklist:
                                         if str(soup.title).replace("<title>", "").replace("</title>", "") in titleblacklist.read():
                                             #print("Found Title")
                                             pass
                                         else:
-                                            with open("/home/ubuntu/Python/Openux/headers-blacklist.txt", "r") as headersblacklist:
+                                            with open(dir_path + "/headers-blacklist.txt", "r") as headersblacklist:
                                                 if server_header in headersblacklist.read():
                                                     #print("Found headers")
                                                     pass
@@ -106,7 +107,7 @@ def Hunter():
                                                     embed.add_embed_field(name="PHP Version", value=str(PHP_header), inline=False)
                                                     webhook.add_embed(embed)
                                                     response = webhook.execute()
-                                                    ix = index.open_dir("/home/ubuntu/Python/Openux/IP_Database")
+                                                    ix = index.open_dir(dir_path + "/IP_Database")
                                                     writer = ix.writer()
                                                     writer.add_document(IP=IP, URL=req.url, page_title=str(soup.title).replace("<title>", "").replace("</title>", ""), time=time, date=date, Server=server_header, PHP=PHP_header, Scanned="False", path="/" + IP)
                                                     writer.commit()
@@ -115,32 +116,31 @@ def Hunter():
                                 pass
 
         except:
-            raise
+            pass
 
 #Openvas
 def openvas():
     connection = UnixSocketConnection(path=config['OPENVAS']['gvmd-sock'], timeout=600000000)
     transform = EtreeTransform()
     #def login():
-    try:
-        with Gmp(connection, transform=transform) as gmp:
-            gmp.authenticate(config['OPENVAS']['gvm-user'], config['OPENVAS']['gvm-pass'])
-    except:
-        pass
-
+    with Gmp(connection, transform=transform) as gmp:
+        gmp.authenticate(config['OPENVAS']['gvm-user'], config['OPENVAS']['gvm-pass'])
     Tasks_Running = 0
     while True:
         try:
             Tasks_Running = 0
-            get_status = gmp.get_tasks()
-            for status in get_status.xpath('//status'):
-                if status.text != 'Done':
-                    Tasks_Running += 1
+            get_status_main = gmp.get_tasks(filter_string='status="Running"~, status="Requested"~, status="Queued",rows=1000')
+            for status in get_status_main.xpath('//status'):
+                Tasks_Running += 1
+            if Tasks_Running != int(config['OPENVAS']['scanning-tasks-limit']):            
+                get_status_interrupted = gmp.get_tasks(filter_string='status="Interrupted", rows=1000')
+                for interrupted in get_status_interrupted.findall('task'):
+                    gmp.resume_task(interrupted.get('id'))
+                    break
             print(Tasks_Running)
-            #time.sleep(60)
-            EE.sleep(10)
+            EE.sleep(300)
             if Tasks_Running != int(config['OPENVAS']['scanning-tasks-limit']):
-                load_data = index.open_dir("/home/ubuntu/Python/Openux/IP_Database")
+                load_data = index.open_dir(dir_path + "/IP_Database")
                 with load_data.searcher() as searcher:
                     query = QueryParser("Scanned", load_data.schema).parse("False")
                     results = searcher.search(query, limit=1)
@@ -175,6 +175,11 @@ def openvas():
             else:
                 print("Too many tasks running")
                 print("Checking for Done tasks")
+                #delete 
+                check = gmp.get_tasks(filter_string=config['OPENVAS']['delete-task'])
+                for delete in check.findall('task'):
+                    gmp.delete_task(delete.get('id'))
+                    
                 for status in get_status.xpath('//status'):
                     if status.text == "Done":
                         resp = gmp.get_tasks()
@@ -189,7 +194,7 @@ def openvas():
                                         host = result.find('host')
                                         file_check = os.path.isfile(dir_path + "/reports/" + host.text + ".pdf")
                                         if file_check == False:
-                                            pdf_filename = dir_path + "/reports/" + host.text + ".pdf"                                
+                                            pdf_filename = dir_path + "/reports/" + host.text + ".pdf"
                                             pdf_report_format_id = config['OPENVAS']['pdf-report-format-id']
                                             response = gmp.get_report(report_id=report.get('id'), report_format_id=pdf_report_format_id, filter_string=config['OPENVAS']['pdf-report-severity'])
                                             report_element = response.find("report")
@@ -205,12 +210,16 @@ def openvas():
                                             response = webhook.execute()
                                         else:
                                             pass
-                                else:
-                                    pass
+                            else:
+                                pass
         except:
-            raise
+            os.system("systemctl restart gsa.service")
+            EE.sleep(10)
+            os.system("systemctl restart gvm.service")
+            EE.sleep(10)
+            os.system("systemctl restart openvas.service")
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
     Thread(target=openvas).start()
     for x in range(int(config['HUNTER']['nmap-threads'])):
         Thread(target=Hunter).start()
