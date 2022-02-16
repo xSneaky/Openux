@@ -17,7 +17,7 @@ import sys
 from discord_webhook import DiscordWebhook, DiscordEmbed
 from threading import Thread
 
-#loads config
+##loads config
 config = configparser.ConfigParser()
 config.read("config.ini")
 
